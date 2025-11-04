@@ -1,0 +1,10 @@
+import requests
+from bs4 import BeautifulSoup
+
+url = "https://eatsmart.housing.illinois.edu/NetNutrition/46#"
+response = requests.get(url)
+
+# print(response.text)
+
+soup = BeautifulSoup(html, 'html.parser')
+print(soup)
