@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'auth_screen.dart';
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
 
@@ -9,6 +9,14 @@ class MainPage extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AuthScreen()),
+            );
+          }
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.block_outlined), label: ''),
