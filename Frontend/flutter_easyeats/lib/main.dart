@@ -24,13 +24,15 @@ class MyApp extends StatelessWidget {
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
   @override
-  build(BuildContext context) {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Welcome to EasyEats")),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Image.asset('assets/images/Logo.png', height: 150),
+            const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
                 // Go to sign-in page
@@ -55,7 +57,6 @@ class AuthScreen extends StatelessWidget {
           ],
         ),
       ),
-      home: const MainPage(),
     );
   }
 }
@@ -70,17 +71,24 @@ class SignUpScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Create Account')),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // After signing up, go to questionnaire
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const QuestionnaireScreen(),
-              ),
-            );
-          },
-          child: const Text('Continue to Questionnaire'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/images/Logo.png', height: 120),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () {
+                // After signing up, go to questionnaire
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const QuestionnaireScreen(),
+                  ),
+                );
+              },
+              child: const Text('Continue to Questionnaire'),
+            ),
+          ],
         ),
       ),
     );
@@ -97,15 +105,22 @@ class SignInScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Sign In')),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // Go directly to home after sign in
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
-          },
-          child: const Text('Sign In'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/images/Logo.png', height: 120),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () {
+                // Go directly to home after sign in
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MainPage()),
+                );
+              },
+              child: const Text('Sign In'),
+            ),
+          ],
         ),
       ),
     );
@@ -135,6 +150,8 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
+            Center(child: Image.asset('assets/images/Logo.png', height: 100)),
+            const SizedBox(height: 24),
             const Text('What is your goal?', style: TextStyle(fontSize: 18)),
             DropdownButton<String>(
               value: goal,
@@ -178,7 +195,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                 print('Goal: $goal, Sex: $sex, Age: $age, Calories: $calories');
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  MaterialPageRoute(builder: (context) => const MainPage()),
                 );
               },
               child: const Text('Finish'),
@@ -198,9 +215,19 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('EasyEats Home')),
-      body: const Center(
-        child: Text('Welcome to your personalized meal plan!'),
+      appBar: AppBar(title: const Text('EasyEats Home'), centerTitle: true),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/images/Logo.png', height: 120),
+            const SizedBox(height: 24),
+            const Text(
+              'Welcome to your personalized meal plan!',
+              style: TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
       ),
     );
   }
