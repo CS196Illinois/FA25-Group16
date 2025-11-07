@@ -1,9 +1,8 @@
-# Group TEAM_NUMBER
-Group Name: TEAM_NAME
+# Group 16
+Group Name: EasyEats
 
-[MVP Link](https://docs.google.com/document/d/1xFI9DDdO5HZAcu36Y6NL-RTDry5E3WHkfy-ZEWuqbXM/edit?usp=sharing)
+[MVP Link](https://docs.google.com/document/d/1n2sEw29xoNncvHaEHSYoNxiD-2LiDbUD/edit?usp=sharing&ouid=113213851535479613252&rtpof=true&sd=true)
 
 Team Members: cicizhu2, jaylonw2, warrenh2, sdiaz66, mihirsd2
 
-Project Manager: PM_NETID
-
+Project Manager: speru4
