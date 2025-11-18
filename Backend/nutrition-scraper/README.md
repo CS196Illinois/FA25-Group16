@@ -7,6 +7,7 @@ A Python web scraper that automatically collects comprehensive nutrition data fr
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [Output](#output)
+- [Loading Data to Database](#loading-data-to-database)
 - [Project Structure](#project-structure)
 - [How It Works](#how-it-works)
 - [Requirements](#requirements)
@@ -103,17 +104,103 @@ Total Fat: 18g
 
 ---
 
+## 💾 Loading Data to Database
+
+After scraping the nutrition data to Excel, you can load it into a SQLite database for easier querying and integration with your app.
+
+### Quick Database Load
+
+```bash
+# Load the most recent Excel file into database
+python load_to_database.py
+
+# Or specify a specific Excel file
+python load_to_database.py all_dining_halls_2025-11-18.xlsx
+```
+
+### What It Does
+
+- ✅ Creates `nutrition_data.db` SQLite database
+- ✅ Creates properly indexed table with all nutrition fields
+- ✅ Loads all data from Excel into database
+- ✅ Shows summary statistics and sample queries
+
+### Database Schema
+
+```sql
+CREATE TABLE nutrition_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dining_hall TEXT NOT NULL,
+    service TEXT NOT NULL,
+    date TEXT NOT NULL,
+    meal_type TEXT NOT NULL,
+    category TEXT,
+    name TEXT NOT NULL,
+    serving_size TEXT,
+    calories REAL,
+    total_fat REAL,
+    saturated_fat REAL,
+    trans_fat REAL,
+    cholesterol REAL,
+    sodium REAL,
+    potassium REAL,
+    total_carbohydrate REAL,
+    dietary_fiber REAL,
+    sugars REAL,
+    protein REAL,
+    scraped_at TIMESTAMP
+)
+```
+
+### Example Queries
+
+```python
+import sqlite3
+
+conn = sqlite3.connect('nutrition_data.db')
+cursor = conn.cursor()
+
+# Find high-protein items
+cursor.execute("""
+    SELECT name, protein, dining_hall, meal_type
+    FROM nutrition_data
+    WHERE protein > 20
+    ORDER BY protein DESC
+    LIMIT 10
+""")
+
+# Get all breakfast items for ISR
+cursor.execute("""
+    SELECT name, calories, protein
+    FROM nutrition_data
+    WHERE dining_hall LIKE '%ISR%'
+    AND meal_type = 'Breakfast'
+""")
+
+# Average calories by meal type
+cursor.execute("""
+    SELECT meal_type, AVG(calories) as avg_calories
+    FROM nutrition_data
+    GROUP BY meal_type
+""")
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
-Project/
+Backend/nutrition-scraper/
 │
 ├── Nutrition_scraping.py          # Core scraper class with all functionality
-├── scrape_all_dining_halls.py     # Main script - run this!
+├── scrape_all_dining_halls.py     # Main script - run this to scrape!
+├── load_to_database.py            # Load Excel data to SQLite database
+├── requirements.txt               # Python dependencies
 ├── README.md                       # This file
 │
 └── [Generated files]
-    └── all_dining_halls_*.xlsx    # Output Excel files (auto-generated)
+    ├── all_dining_halls_*.xlsx    # Output Excel files (auto-generated)
+    └── nutrition_data.db          # SQLite database (auto-generated)
 ```
 
 ### File Descriptions
@@ -127,6 +214,11 @@ Project/
 - Main execution script
 - Configures and runs the scraper
 - Generates Excel output
+
+**`load_to_database.py`**
+- Loads scraped Excel data into SQLite database
+- Creates tables and indexes automatically
+- Provides example queries and statistics
 
 ---
 
