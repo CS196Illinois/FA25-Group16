@@ -1,27 +1,42 @@
 import sqlite3
+import pandas as pd
 
+df = pd.read_csv("nutrition_with_meals_20251104_012147.csv")
 
 conn = sqlite3.connect("mydatabase.db")
 cursor = conn.cursor()
 
-"""CREATE TABLE IkeDining (
-    name TEXT PRIMARY KEY AUTOINCREMENT,
-    diningHall TEXT PRIMARY KEY AUTOINCREMENT)
-    """
+cursor.execute("DROP TABLE IF EXISTS meals")
+
+cursor.execute("""CREATE TABLE IF NOT EXISTS meals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    dining_hall TEXT NOT NULL,
+    service TEXT,
+    serving_size TEXT,
+    calories TEXT NOT NULL
+);""")
+
 print("Table created successfully!")
 
 conn.commit()
 
-meals = [
-    {"date": "2025-11-04", "meal_type": "Lunch", "item_name": "Chicken Sandwich", "calories": 320},
-    {"date": "2025-11-04", "meal_type": "Dinner", "item_name": "Vegetable Stir Fry", "calories": 280}
-]
-for meal in meals:
+df = df[["name", "dining_hall", "service", "serving_size", "calories"]]
+
+
+for _, row in df.iterrows():
     cursor.execute('''
-        INSERT INTO meals (date, meal_type, item_name, calories, allergens)
+        INSERT INTO meals (name, dining_hall, service, serving_size, calories)
         VALUES (?, ?, ?, ?, ?)
-    ''', (meal["date"], meal["meal_type"], meal["item_name"], meal["calories"], meal["allergens"]))
+    ''', (row["name"], row["dining_hall"], row["service"], row["serving_size"], row["calories"]))
 
 conn.commit()
 
-cursor.execute("SELECT * FROM meals")
+cursor.execute("SELECT name, dining_hall, service, serving_size, calories FROM meals")
+rows = cursor.fetchall()
+
+print("SELECT name, dining_hall, service, serving_size, calories FROM meals")
+for row in rows:
+    print(f"{row[0]} - {row[1]}")
+
+conn.close()
