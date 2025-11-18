@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Output files
+*.xlsx
+!example_output.xlsx  # Keep example if you want to commit one
+
+# Temporary files
+*.log
+*.tmp
+temp.txt
+
+# Debug files
+*.html
+page_*.html
+*_structure.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Excel temp files
+~$*.xlsx
+~$*.xls
