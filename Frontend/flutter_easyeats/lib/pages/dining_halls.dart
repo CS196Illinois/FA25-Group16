@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'auth_screen.dart';
-import 'dining_halls.dart' as dining_halls;
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
 
@@ -15,11 +14,6 @@ class MainPage extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const AuthScreen()),
-            );
-          } else if (index == 2) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const dining_halls.MainPage()),
             );
           }
         },
@@ -37,7 +31,7 @@ class MainPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
+
               const SizedBox(height: 10),
               // Logo at the top
               Center(
@@ -80,6 +74,7 @@ class MainPage extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Image banner with text overlay
+              //Dining Hall
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Stack(
@@ -98,7 +93,7 @@ class MainPage extends StatelessWidget {
                       padding: const EdgeInsets.all(16),
                       alignment: Alignment.centerLeft,
                       child: const Text(
-                        "Next Meal: Grillworks, ISR",
+                        "ISR",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -112,45 +107,110 @@ class MainPage extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // Serving section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text("Serving:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Icon(Icons.chevron_right),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
+              //Image banner with text overlay
+              //Dining Hall
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  alignment: Alignment.centerLeft,
                   children: [
-                    _buildFoodItem('Grilled_Chicken.jpg', 'Chicken'),
-                    _buildFoodItem('Assorted_Veg.jpg', 'Assorted Vegetables'),
-                    _buildFoodItem('Rice.webp', 'Jasmine Rice'),
-                    _buildFoodItem('mixed_fruit.jpg', 'Fruit Mix'),
+                    Image.asset(
+                      'assets/images/Grillworks.jpg',
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                    Container(
+                      height: 150,
+                      width: double.infinity,
+                      color: Colors.black.withOpacity(0.3),
+                      padding: const EdgeInsets.all(16),
+                      alignment: Alignment.centerLeft,
+                      child: const Text(
+                        "PAR",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
 
-              // Goals section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text("Goals", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Icon(Icons.chevron_right),
-                ],
+              //Image banner with text overlay
+              //Dining Hall
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    Image.asset(
+                      'assets/images/Grillworks.jpg',
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                    Container(
+                      height: 150,
+                      width: double.infinity,
+                      color: Colors.black.withOpacity(0.3),
+                      padding: const EdgeInsets.all(16),
+                      alignment: Alignment.centerLeft,
+                      child: const Text(
+                        "LAR/Allen",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
 
-              _buildProgressBar("Calories", 1000, 2500, "kcal"),
-              const SizedBox(height: 8),
-              _buildProgressBar("Protein", 50, 100, "g"),
-              const SizedBox(height: 8),
-              _buildProgressBar("Carbohydrates", 100, 500, "g"),
+              const SizedBox(height: 20),
+
+              //Image banner with text overlay
+              //Dining Hall
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    Image.asset(
+                      'assets/images/Grillworks.jpg',
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                    Container(
+                      height: 150,
+                      width: double.infinity,
+                      color: Colors.black.withOpacity(0.3),
+                      padding: const EdgeInsets.all(16),
+                      alignment: Alignment.centerLeft,
+                      child: const Text(
+                        "Ikenberry",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+
+
             ],
           ),
         ),
@@ -175,21 +235,42 @@ class MainPage extends StatelessWidget {
   }
 
   // Helper widget for food items
-static Widget _buildFoodItem(String assetName, String name) {
-  return Container(
-    margin: const EdgeInsets.only(right: 16),
-    child: Column(
-      children: [
-        CircleAvatar(
-          backgroundImage: AssetImage('assets/images/$assetName'),
-          radius: 35,
-        ),
-        const SizedBox(height: 8),
-        Text(name, style: const TextStyle(fontSize: 14)),
-      ],
-    ),
-  );
-}
+  static Widget _buildFoodItem(String assetName, String name) {
+    return Container(
+      margin: const EdgeInsets.only(right: 16),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircleAvatar(
+            backgroundImage: AssetImage('assets/images/$assetName'),
+            radius: 35,
+          ),
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black.withOpacity(0.4),
+            ),
+          ),
+          SizedBox(
+            width: 60,
+            child: Text(
+              name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // Helper widget for progress bars
   static Widget _buildProgressBar(String label, double current, double goal, String unit) {

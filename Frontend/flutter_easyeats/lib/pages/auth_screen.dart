@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'sign_in_screen.dart';
 import 'sign_up_screen.dart';
-import '../widgets/app_logo.dart'; // <-- import
+
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -14,7 +14,7 @@ class AuthScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AppLogo(), // 👈 logo added
+            
             ElevatedButton(
               onPressed: () {
                 Navigator.push(

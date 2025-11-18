@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
-import '../widgets/app_logo.dart';
+
 
 class QuestionnaireScreen extends StatefulWidget {
   const QuestionnaireScreen({super.key});
@@ -23,7 +23,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            const AppLogo(), // 👈 logo here
+            
             const Text('What is your goal?', style: TextStyle(fontSize: 18)),
             DropdownButton<String>(
               value: goal,

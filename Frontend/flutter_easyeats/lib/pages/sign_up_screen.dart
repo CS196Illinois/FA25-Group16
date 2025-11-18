@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'questionnaire_screen.dart';
-import '../widgets/app_logo.dart';
+
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -13,7 +13,7 @@ class SignUpScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AppLogo(), // 👈 logo added
+            
             ElevatedButton(
               onPressed: () {
                 Navigator.pushReplacement(
