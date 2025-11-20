@@ -1,0 +1,190 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Illinois Street Residence Hall',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        // This is the theme of your application.
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 7, 15, 124)),
+      ),
+      home: const MyHomePage(title: ''),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
+
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
+    return Scaffold(
+      appBar: null,
+      
+      //bottom nav bar
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        /*onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AuthScreen()),
+            );
+          }
+        },
+        */
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.block_outlined), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+        ],
+      ),
+
+      
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              
+              const SizedBox(height: 10),
+              // Logo at the top
+              Center(
+                child: Image.asset(
+                  'assets/images/Logo.png',
+                  height: 50, // adjust as needed
+                ),
+              ),
+              const SizedBox(height: 6),
+
+              
+
+              // Top Buttons Row
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Image banner with text overlay - to make unscrollable
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    Image.asset(
+                      'assets/images/Grillworks.jpg',
+                      height: 100,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                    Container(
+                      height: 100,
+                      width: double.infinity,
+                      color: Colors.black.withOpacity(0.3),
+                      padding: const EdgeInsets.all(16),
+                      alignment: Alignment.centerLeft,
+                      child: const Text(
+                        "ISR",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Search bar
+              TextField(
+                decoration: InputDecoration(
+                  hintText: "Search",
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Serving section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text("Serving:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Icon(Icons.chevron_right),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              
+
+              
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
