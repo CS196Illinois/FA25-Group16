@@ -14,7 +14,13 @@ class AuthScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            
+            // Logo at the top
+            Image.asset(
+              'assets/images/Logo.png',
+              height: 80,
+            ),
+            const SizedBox(height: 40),
+
             ElevatedButton(
               onPressed: () {
                 Navigator.push(

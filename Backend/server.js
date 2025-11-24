@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
+const auth = require('./auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -93,6 +94,71 @@ app.get('/api/meal-plan', (req, res) => {
     });
 });
 
+// Authentication endpoints
+app.post('/api/auth/register', (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Password length check
+    if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    auth.registerUser(email, password, (err, result) => {
+        if (err) {
+            return res.status(400).json(err);
+        }
+        res.status(201).json(result);
+    });
+});
+
+app.post('/api/auth/login', (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    auth.loginUser(email, password, (err, result) => {
+        if (err) {
+            return res.status(401).json(err);
+        }
+        res.json(result);
+    });
+});
+
+app.put('/api/user/:userId/profile', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const profileData = req.body;
+
+    auth.updateUserProfile(userId, profileData, (err, result) => {
+        if (err) {
+            return res.status(400).json(err);
+        }
+        res.json(result);
+    });
+});
+
+app.get('/api/user/:userId/profile', (req, res) => {
+    const userId = parseInt(req.params.userId);
+
+    auth.getUserProfile(userId, (err, result) => {
+        if (err) {
+            return res.status(404).json(err);
+        }
+        res.json(result);
+    });
+});
+
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -101,4 +167,9 @@ app.get('/health', (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Authentication endpoints available at:`);
+    console.log(`  POST http://localhost:${PORT}/api/auth/register`);
+    console.log(`  POST http://localhost:${PORT}/api/auth/login`);
+    console.log(`  PUT  http://localhost:${PORT}/api/user/:userId/profile`);
+    console.log(`  GET  http://localhost:${PORT}/api/user/:userId/profile`);
 });

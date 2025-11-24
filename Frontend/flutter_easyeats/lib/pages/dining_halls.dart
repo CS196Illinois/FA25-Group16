@@ -31,7 +31,6 @@ class MainPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               const SizedBox(height: 10),
               // Logo at the top
               Center(

@@ -4,135 +4,197 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-EasyEats is a meal planning and nutrition tracking application for university dining halls. The project consists of a Flutter mobile frontend and Python-based menu scraper for the University of Illinois dining system.
+EasyEats is a meal planning and nutrition tracking application for university dining halls. The project consists of:
+- **Flutter mobile frontend** - Cross-platform app for meal tracking and nutrition goals
+- **Python nutrition scraper** - Automated data collection from University of Illinois dining system
 
 ## Repository Structure
 
-- **Frontend/flutter_easyeats/** - Flutter mobile application
-- **Backend/** - Backend services (placeholder for future development)
-- **Project/** - Python utilities including the dining hall menu scraper
-- **Docs/** - Project documentation and planning files
-- **Research/** - Research and reference materials
+```
+FA25-Group16/
+├── Frontend/flutter_easyeats/   # Flutter mobile application
+├── Backend/nutrition-scraper/   # Python web scraper for dining hall menus
+├── WebScraping/                 # Legacy scraper scripts
+├── Docs/                        # Project documentation
+└── Research/                    # Reference materials
+```
 
-## Flutter Frontend Development
+## Flutter Frontend
 
-### Running the Application
+### Essential Commands
 
 ```bash
 cd Frontend/flutter_easyeats
+
+# Install dependencies
 flutter pub get
+
+# Run app (connects to device/emulator)
 flutter run
-```
 
-### Running Tests
-
-```bash
-cd Frontend/flutter_easyeats
+# Run tests
 flutter test
-```
 
-### Building the Application
+# Run specific test file
+flutter test test/widget_test.dart
 
-```bash
-cd Frontend/flutter_easyeats
-# For Android
-flutter build apk
-
-# For iOS
-flutter build ios
-
-# For all platforms
-flutter build
-```
-
-### Linting
-
-```bash
-cd Frontend/flutter_easyeats
+# Analyze code for issues
 flutter analyze
+
+# Build for platforms
+flutter build apk          # Android
+flutter build ios          # iOS
+flutter build             # All platforms
 ```
 
 ### Application Architecture
 
-The Flutter app follows a page-based navigation structure:
+**Entry Point:** [lib/main.dart](Frontend/flutter_easyeats/lib/main.dart)
+- Initializes `MyApp` with MaterialApp
+- Sets `AuthScreen` as home screen
+- Uses green primary color theme
 
-- **Entry Point:** [lib/main.dart](Frontend/flutter_easyeats/lib/main.dart) initializes the app with `AuthScreen` as the home screen
-- **Pages Directory:** [lib/pages/](Frontend/flutter_easyeats/lib/pages/) contains all screen components
-  - `auth_screen.dart` - Initial authentication landing page
-  - `sign_in_screen.dart` - User sign-in interface
-  - `sign_up_screen.dart` - User registration interface
-  - `questionnaire_screen.dart` - Onboarding questionnaire collecting user goals, age, sex, and calorie targets
-  - `home_page.dart` (MainPage) - Main dashboard with bottom navigation, search, meal tracking, and nutrition goals
+**Navigation Flow:**
+1. `AuthScreen` → User chooses sign in or sign up
+2. `SignUpScreen` → New user registration
+3. `QuestionnaireScreen` → Collects user goals, age, sex, calorie targets
+4. `MainPage` (home_page.dart) → Main dashboard with bottom navigation
 
-### Navigation Flow
+**Page Structure:**
+All screens are in [lib/pages/](Frontend/flutter_easyeats/lib/pages/):
+- `auth_screen.dart` - Landing page with auth options
+- `sign_in_screen.dart` - User login
+- `sign_up_screen.dart` - User registration
+- `questionnaire_screen.dart` - Onboarding personalization
+- `home_page.dart` - Main dashboard (MainPage widget)
+- `dining_halls.dart` - Dining hall selection (separate MainPage widget)
 
-1. App starts at `AuthScreen` (sign in/sign up options)
-2. After sign up, users proceed to `QuestionnaireScreen` for personalization
-3. After completing questionnaire, users navigate to `MainPage` (home dashboard)
-4. Bottom navigation bar on `MainPage` allows navigation between main sections (currently only home is implemented)
+**Navigation Pattern:**
+- Uses standard `Navigator.push` and `Navigator.pushReplacement`
+- Bottom navigation bar in MainPage allows switching between sections
+- `dining_halls.dart` contains another MainPage widget with same bottom nav structure
 
-### Key Dependencies
-
+**Key Dependencies:**
+- SDK: Dart 3.9.2, Flutter 3.35.5
 - `cupertino_icons: ^1.0.8` - iOS-style icons
-- `flutter_lints: ^5.0.0` - Recommended linting rules
+- `flutter_lints: ^5.0.0` - Linting rules
 
-### Important Notes
+**Assets:**
+- Images stored in `assets/images/` directory
+- Configured in `pubspec.yaml` as `assets: - assets/images/`
+- Referenced in code (e.g., Logo.png, Grillworks.jpg)
 
-- The app references widgets from a `widgets/` directory (e.g., `AppLogo`), but these files are not yet committed to the repository
-- Asset images are referenced in `home_page.dart` but the assets directory structure is not fully defined in `pubspec.yaml`
-- No backend integration is implemented yet - all data is stored locally in widget state
+**Current Limitations:**
+- No backend integration - all data stored in widget state
+- No persistent storage or database
+- Multiple widgets named `MainPage` in different files (home_page.dart and dining_halls.dart) - can cause confusion
 
-## Python Menu Scraper
+### Adding New Features
 
-### Running the Menu Scraper
+**New screens:** Add to `lib/pages/` following naming conventions:
+- `*_screen.dart` for standalone screens (auth, sign-up, questionnaire)
+- `*_page.dart` for main navigation destinations (home)
+
+**Widgets directory:** Currently referenced but not present - create `lib/widgets/` for reusable components
+
+## Python Nutrition Scraper
+
+### Location and Files
+
+**Directory:** `Backend/nutrition-scraper/`
+
+**Key Files:**
+- `Nutrition_scraping.py` - Core `NutritionScraperComplete` class with all scraping logic
+- `scrape_all_dining_halls.py` - Main execution script
+- `requirements.txt` - Python dependencies
+
+### Running the Scraper
 
 ```bash
-cd Project
-python menu_scraper.py
+cd Backend/nutrition-scraper
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install ChromeDriver (Mac)
+brew install chromedriver
+
+# Run scraper (takes 30-60 minutes)
+python scrape_all_dining_halls.py
 ```
 
-### Scraper Functionality
+### Scraper Architecture
 
-The `DiningHallsScraper` class in [Project/menu_scraper.py](Project/menu_scraper.py) uses Selenium to scrape menu data from the University of Illinois dining system (eatsmart.housing.illinois.edu).
+**Main Class:** `NutritionScraperComplete` in Nutrition_scraping.py
 
-**Key Features:**
-- Automatically discovers all dining halls and their services from the navigation dropdown
-- Scrapes menu items for each service
-- Exports data to both Excel and JSON formats
+**Initialization:**
+- `testing_mode=False` - Full scraping (default)
+- `testing_mode=True` - Limits to 5 items per meal for faster testing
 
-**Output Files:**
-- `dining_menu_results_YYYYMMDD_HHMMSS.xlsx` - Flattened table format
-- `dining_menu_results_YYYYMMDD_HHMMSS.json` - Structured JSON with hierarchical data
+**Execution Flow:**
+1. `scrape_dining_structure()` - Extracts all dining halls and services from dropdown
+2. `navigate_to_service()` - Navigates to specific dining service by unit_id
+3. `scrape_all_with_complete_data()` - Main loop iterating through halls, services, dates, meals
+4. For each meal: Clicks every food item, extracts nutrition data from modal
+5. `export_to_excel()` - Exports to timestamped Excel file
 
-### Scraper Requirements
+**Key Configuration:**
+- `DAYS_TO_SCRAPE = 7` in scrape_all_dining_halls.py - Number of days to scrape
+- Headless Chrome browser (runs in background)
+- Data source: https://eatsmart.housing.illinois.edu
 
-The scraper requires:
-- Selenium WebDriver with Chrome/Chromium
-- BeautifulSoup4
-- pandas
-- openpyxl
+**Output Format:**
+- Filename: `all_dining_halls_YYYYMMDD_HHMMSS.xlsx`
+- Contains: dining_hall, service, date, meal_type, category, name, serving_size, calories, all macro/micronutrients
 
-Install dependencies:
-```bash
-pip install selenium beautifulsoup4 pandas openpyxl
+**Dependencies:**
+- selenium>=4.0.0 (web automation)
+- beautifulsoup4>=4.9.0 (HTML parsing)
+- pandas>=1.3.0 (data manipulation)
+- openpyxl>=3.0.0 (Excel export)
+
+### Scraper Testing
+
+To test changes quickly:
+```python
+# Modify scrape_all_dining_halls.py
+scraper = NutritionScraperComplete(testing_mode=True)  # Limits items
+DAYS_TO_SCRAPE = 1  # Test single day
 ```
 
 ## Development Workflow
 
-When working on this project:
+**Flutter changes:**
+- Always work in `Frontend/flutter_easyeats/`
+- Run `flutter pub get` after modifying pubspec.yaml
+- Use `flutter analyze` before committing
+- Test files go in `test/` directory
 
-1. **Frontend changes:** Always work in `Frontend/flutter_easyeats/` and run `flutter pub get` after any pubspec.yaml changes
-2. **Navigation changes:** The app uses standard Flutter `Navigator.push` and `Navigator.pushReplacement` - maintain the current flow through auth → questionnaire → main page
-3. **New pages:** Add new screen files to `lib/pages/` and follow the existing naming convention (`*_screen.dart` for standalone screens, `*_page.dart` for main navigation destinations)
-4. **Widgets:** Create reusable widgets in `lib/widgets/` (currently referenced but directory doesn't exist)
-5. **Scraper modifications:** The scraper architecture is centered around the `DiningHallsScraper` class with separate methods for navigation, extraction, and export
+**Scraper modifications:**
+- Work in `Backend/nutrition-scraper/`
+- Test in `testing_mode=True` first
+- Chrome version must match ChromeDriver version
+
+**Navigation changes:**
+- Maintain flow: auth → questionnaire → main page
+- Be aware of duplicate `MainPage` widget names in different files
+- Bottom navigation uses index-based routing
 
 ## Testing
 
-The Flutter app includes a basic widget test at [test/widget_test.dart](Frontend/flutter_easyeats/test/widget_test.dart). When adding new features, add corresponding tests in the `test/` directory following Flutter testing conventions.
+**Flutter:**
+```bash
+cd Frontend/flutter_easyeats
+flutter test                          # All tests
+flutter test test/widget_test.dart    # Specific test
+```
+
+**Scraper:**
+- No automated tests currently
+- Manual testing with `testing_mode=True`
 
 ## Git Workflow
 
 - Main branch: `master`
-- Recent work includes menu scraper integration and auth screen navigation improvements
-- Commit messages should be descriptive and reference the feature or fix being implemented
+- Repository includes work from multiple team members (cicizhu2, jaylonw2, warrenh2, sdiaz66, mihirsd2)
+- Recent commits focus on menu scraper integration and navigation improvements
