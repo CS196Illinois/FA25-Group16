@@ -60,18 +60,23 @@ class AuthService {
     String? goal,
     int? age,
     String? sex,
-    int? calories,
-  ) async {
+    int? calories, {
+    List<String>? dietaryRestrictions,
+    bool? notificationsEnabled,
+  }) async {
     try {
+      final Map<String, dynamic> body = {};
+      if (goal != null) body['goal'] = goal;
+      if (age != null) body['age'] = age;
+      if (sex != null) body['sex'] = sex;
+      if (calories != null) body['calories'] = calories;
+      if (dietaryRestrictions != null) body['dietary_restrictions'] = dietaryRestrictions;
+      if (notificationsEnabled != null) body['notifications_enabled'] = notificationsEnabled;
+
       final response = await http.put(
         Uri.parse('$baseUrl/user/$userId/profile'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'goal': goal,
-          'age': age,
-          'sex': sex,
-          'calories': calories,
-        }),
+        body: json.encode(body),
       );
 
       final data = json.decode(response.body);

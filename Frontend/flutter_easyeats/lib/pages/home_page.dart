@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'auth_screen.dart';
 import 'dining_halls.dart' as dining_halls;
+import 'settings_page.dart';
+
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
 
@@ -10,25 +11,34 @@ class MainPage extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         type: BottomNavigationBarType.fixed,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
         onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const AuthScreen()),
-            );
-          } else if (index == 2) {
+          if (index == 1) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const dining_halls.MainPage()),
             );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
+            );
           }
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.block_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant),
+            label: 'Dining Halls',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
       body: SafeArea(

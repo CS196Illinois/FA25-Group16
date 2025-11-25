@@ -159,6 +159,54 @@ app.get('/api/user/:userId/profile', (req, res) => {
     });
 });
 
+app.post('/api/user/:userId/change-password', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+        return res.status(400).json({ error: 'Old and new passwords are required' });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+
+    auth.changePassword(userId, oldPassword, newPassword, (err, result) => {
+        if (err) {
+            return res.status(400).json(err);
+        }
+        res.json(result);
+    });
+});
+
+app.post('/api/user/:userId/favorites', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const { foodItem } = req.body;
+
+    if (!foodItem) {
+        return res.status(400).json({ error: 'Food item is required' });
+    }
+
+    auth.addFavorite(userId, foodItem, (err, result) => {
+        if (err) {
+            return res.status(400).json(err);
+        }
+        res.json(result);
+    });
+});
+
+app.delete('/api/user/:userId/favorites/:index', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const index = parseInt(req.params.index);
+
+    auth.removeFavorite(userId, index, (err, result) => {
+        if (err) {
+            return res.status(400).json(err);
+        }
+        res.json(result);
+    });
+});
+
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

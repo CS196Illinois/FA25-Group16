@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
 
 
 class QuestionnaireScreen extends StatefulWidget {
@@ -94,13 +95,16 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                 });
 
                 if (result['success']) {
+                  // Store user data (with persistent storage)
+                  await UserService.setCurrentUser(widget.userId, result['data']['user']);
+
                   if (mounted) {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => const MainPage()),
                     );
                   }
-                } else {
+                } else{
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(result['error'])),

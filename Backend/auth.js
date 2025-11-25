@@ -75,7 +75,10 @@ function registerUser(email, password, callback) {
         goal: null,
         age: null,
         sex: null,
-        calories: null
+        calories: null,
+        dietary_restrictions: [],
+        notifications_enabled: true,
+        favorites: []
     };
 
     users.push(newUser);
@@ -125,11 +128,13 @@ function updateUserProfile(userId, profileData, callback) {
     }
 
     // Update profile fields
-    const { goal, age, sex, calories } = profileData;
-    users[userIndex].goal = goal;
-    users[userIndex].age = age;
-    users[userIndex].sex = sex;
-    users[userIndex].calories = calories;
+    const { goal, age, sex, calories, dietary_restrictions, notifications_enabled } = profileData;
+    if (goal !== undefined) users[userIndex].goal = goal;
+    if (age !== undefined) users[userIndex].age = age;
+    if (sex !== undefined) users[userIndex].sex = sex;
+    if (calories !== undefined) users[userIndex].calories = calories;
+    if (dietary_restrictions !== undefined) users[userIndex].dietary_restrictions = dietary_restrictions;
+    if (notifications_enabled !== undefined) users[userIndex].notifications_enabled = notifications_enabled;
     users[userIndex].updated_at = new Date().toISOString();
 
     if (writeUsers(users)) {
@@ -141,7 +146,9 @@ function updateUserProfile(userId, profileData, callback) {
                 goal: users[userIndex].goal,
                 age: users[userIndex].age,
                 sex: users[userIndex].sex,
-                calories: users[userIndex].calories
+                calories: users[userIndex].calories,
+                dietary_restrictions: users[userIndex].dietary_restrictions,
+                notifications_enabled: users[userIndex].notifications_enabled
             }
         });
     } else {
@@ -165,8 +172,82 @@ function getUserProfile(userId, callback) {
         age: user.age,
         sex: user.sex,
         calories: user.calories,
+        dietary_restrictions: user.dietary_restrictions || [],
+        notifications_enabled: user.notifications_enabled !== undefined ? user.notifications_enabled : true,
+        favorites: user.favorites || [],
         created_at: user.created_at
     });
+}
+
+// Change password
+function changePassword(userId, oldPassword, newPassword, callback) {
+    const users = readUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+
+    if (userIndex === -1) {
+        return callback({ error: 'User not found' }, null);
+    }
+
+    // Verify old password
+    if (!verifyPassword(oldPassword, users[userIndex].password_hash)) {
+        return callback({ error: 'Current password is incorrect' }, null);
+    }
+
+    // Update password
+    users[userIndex].password_hash = hashPassword(newPassword);
+    users[userIndex].updated_at = new Date().toISOString();
+
+    if (writeUsers(users)) {
+        callback(null, { message: 'Password changed successfully' });
+    } else {
+        callback({ error: 'Failed to change password' }, null);
+    }
+}
+
+// Add to favorites
+function addFavorite(userId, foodItem, callback) {
+    const users = readUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+
+    if (userIndex === -1) {
+        return callback({ error: 'User not found' }, null);
+    }
+
+    if (!users[userIndex].favorites) {
+        users[userIndex].favorites = [];
+    }
+
+    users[userIndex].favorites.push(foodItem);
+    users[userIndex].updated_at = new Date().toISOString();
+
+    if (writeUsers(users)) {
+        callback(null, { message: 'Added to favorites', favorites: users[userIndex].favorites });
+    } else {
+        callback({ error: 'Failed to add favorite' }, null);
+    }
+}
+
+// Remove from favorites
+function removeFavorite(userId, foodItemIndex, callback) {
+    const users = readUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+
+    if (userIndex === -1) {
+        return callback({ error: 'User not found' }, null);
+    }
+
+    if (!users[userIndex].favorites || users[userIndex].favorites.length === 0) {
+        return callback({ error: 'No favorites to remove' }, null);
+    }
+
+    users[userIndex].favorites.splice(foodItemIndex, 1);
+    users[userIndex].updated_at = new Date().toISOString();
+
+    if (writeUsers(users)) {
+        callback(null, { message: 'Removed from favorites', favorites: users[userIndex].favorites });
+    } else {
+        callback({ error: 'Failed to remove favorite' }, null);
+    }
 }
 
 // Initialize database on module load
@@ -176,5 +257,8 @@ module.exports = {
     registerUser,
     loginUser,
     updateUserProfile,
-    getUserProfile
+    getUserProfile,
+    changePassword,
+    addFavorite,
+    removeFavorite
 };

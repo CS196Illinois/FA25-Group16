@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -45,6 +46,10 @@ class _SignInScreenState extends State<SignInScreen> {
     });
 
     if (result['success']) {
+      // Store user data (with persistent storage)
+      final userId = result['data']['id'];
+      await UserService.setCurrentUser(userId, result['data']);
+
       // Navigate to home page
       if (mounted) {
         Navigator.pushReplacement(
