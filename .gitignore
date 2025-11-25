@@ -31,3 +31,14 @@ backend/nutrition-scraper/*.xlsx
 
 # Claude
 .claude/
+
+# Node.js
+node_modules/
+.npm-cache/
+npm-debug.log
+yarn-error.log
+
+# Cache
+.cache/
+dist/
+build/
