@@ -1,9 +1,72 @@
 import 'package:flutter/material.dart';
 import 'dining_halls.dart' as dining_halls;
 import 'settings_page.dart';
+import '../services/nutrition_service.dart';
+import '../services/user_service.dart';
+import '../models/meal_entry.dart';
 
-class MainPage extends StatelessWidget {
+class MainPage extends StatefulWidget {
   const MainPage({super.key});
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  bool _isLoading = true;
+  NutritionTotals _todayTotals = NutritionTotals(
+    calories: 0,
+    protein: 0,
+    fat: 0,
+    carbs: 0,
+    fiber: 0,
+  );
+  List<MealEntry> _todayMeals = [];
+  int _userCalorieGoal = 2000;
+  int? _userId;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
+
+    try {
+      // Get current user
+      final user = await UserService.getCurrentUser();
+      if (user == null) {
+        setState(() {
+          _error = 'Not logged in';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      _userId = user['id'];
+      _userCalorieGoal = user['calories'] ?? 2000;
+
+      // Get today's totals
+      final todayData = await NutritionService.getTodayTotals(_userId!);
+
+      setState(() {
+        _todayTotals = todayData['totals'];
+        _todayMeals = todayData['meals'];
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,138 +105,295 @@ class MainPage extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              
-              const SizedBox(height: 10),
-              // Logo at the top
-              Center(
-                child: Image.asset(
-                  'assets/images/Logo.png',
-                  height: 60, // adjust as needed
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Search bar
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Search",
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                // Logo at the top
+                Center(
+                  child: Image.asset(
+                    'assets/images/Logo.png',
+                    height: 60,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Top Buttons Row
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildTopButton(Icons.favorite_border, "Favorites"),
-                    _buildTopButton(Icons.history, "History"),
-                    _buildTopButton(Icons.person_add_alt_1_outlined, "Following"),
-                    _buildTopButton(Icons.qr_code_scanner_outlined, "QR"),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Image banner with text overlay
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    Image.asset(
-                      'assets/images/Grillworks.jpg',
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                // Error message
+                if (_error.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
                     ),
-                    Container(
-                      height: 150,
-                      width: double.infinity,
-                      color: Colors.black.withOpacity(0.3),
-                      padding: const EdgeInsets.all(16),
-                      alignment: Alignment.centerLeft,
-                      child: const Text(
-                        "Next Meal: Grillworks, ISR",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _error,
+                            style: TextStyle(color: Colors.red.shade700),
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+
+                // Loading indicator
+                if (_isLoading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else ...[
+                  // Search bar
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: "Search foods...",
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                    ),
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const dining_halls.MainPage()),
+                      );
+                    },
+                    readOnly: true,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Top Buttons Row
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildTopButton(Icons.favorite_border, "Favorites"),
+                        _buildTopButton(Icons.history, "History", onTap: () {
+                          // Navigate to history page - to be implemented
+                        }),
+                        _buildTopButton(Icons.refresh, "Refresh", onTap: _loadData),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Today's Meals Summary
+                  if (_todayMeals.isNotEmpty) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Today's Meals (${_todayMeals.length})",
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: () {
+                            // Show meals detail
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _todayMeals.map((meal) {
+                          return _buildMealCard(meal);
+                        }).toList(),
                       ),
                     ),
+                    const SizedBox(height: 25),
                   ],
-                ),
-              ),
 
-              const SizedBox(height: 20),
+                  // Goals section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Today's Goals",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        "${_todayMeals.length} meals",
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
 
-              // Serving section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text("Serving:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Icon(Icons.chevron_right),
+                  _buildProgressBar(
+                    "Calories",
+                    _todayTotals.calories,
+                    _userCalorieGoal.toDouble(),
+                    "kcal",
+                  ),
+                  const SizedBox(height: 8),
+                  _buildProgressBar(
+                    "Protein",
+                    _todayTotals.protein,
+                    (_userCalorieGoal * 0.3 / 4).toDouble(),
+                    "g",
+                  ),
+                  const SizedBox(height: 8),
+                  _buildProgressBar(
+                    "Carbohydrates",
+                    _todayTotals.carbs,
+                    (_userCalorieGoal * 0.5 / 4).toDouble(),
+                    "g",
+                  ),
+                  const SizedBox(height: 8),
+                  _buildProgressBar(
+                    "Fat",
+                    _todayTotals.fat,
+                    (_userCalorieGoal * 0.2 / 9).toDouble(),
+                    "g",
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Quick actions
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.restaurant_menu, color: Colors.green.shade700, size: 32),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Ready to eat?",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade900,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Check out dining halls for personalized recommendations",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.arrow_forward, color: Colors.green.shade700),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const dining_halls.MainPage()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
                 ],
-              ),
-              const SizedBox(height: 10),
-
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildFoodItem('Grilled_Chicken.jpg', 'Chicken'),
-                    _buildFoodItem('Assorted_Veg.jpg', 'Assorted Vegetables'),
-                    _buildFoodItem('Rice.webp', 'Jasmine Rice'),
-                    _buildFoodItem('mixed_fruit.jpg', 'Fruit Mix'),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // Goals section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text("Goals", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Icon(Icons.chevron_right),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              _buildProgressBar("Calories", 1000, 2500, "kcal"),
-              const SizedBox(height: 8),
-              _buildProgressBar("Protein", 50, 100, "g"),
-              const SizedBox(height: 8),
-              _buildProgressBar("Carbohydrates", 100, 500, "g"),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Helper widget for top buttons
-  static Widget _buildTopButton(IconData icon, String label) {
+  Widget _buildMealCard(MealEntry meal) {
+    return Container(
+      width: 140,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            meal.mealType,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            meal.diningHall,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "${meal.totals.calories.toInt()} cal",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "P: ${meal.totals.protein.toInt()}g",
+            style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+          ),
+          Text(
+            "C: ${meal.totals.carbs.toInt()}g",
+            style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopButton(IconData icon, String label, {VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.only(right: 8),
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: onTap ?? () {},
         icon: Icon(icon, size: 18),
         label: Text(label),
         style: OutlinedButton.styleFrom(
@@ -184,36 +404,36 @@ class MainPage extends StatelessWidget {
     );
   }
 
-  // Helper widget for food items
-static Widget _buildFoodItem(String assetName, String name) {
-  return Container(
-    margin: const EdgeInsets.only(right: 16),
-    child: Column(
-      children: [
-        CircleAvatar(
-          backgroundImage: AssetImage('assets/images/$assetName'),
-          radius: 35,
-        ),
-        const SizedBox(height: 8),
-        Text(name, style: const TextStyle(fontSize: 14)),
-      ],
-    ),
-  );
-}
-
-  // Helper widget for progress bars
-  static Widget _buildProgressBar(String label, double current, double goal, String unit) {
+  Widget _buildProgressBar(String label, double current, double goal, String unit) {
     double progress = current / goal;
+    bool isOverGoal = progress > 1.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("$label: ${current.toInt()}/${goal.toInt()} $unit"),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "$label: ${current.toInt()}/${goal.toInt()} $unit",
+              style: const TextStyle(fontSize: 14),
+            ),
+            Text(
+              "${(progress * 100).toInt()}%",
+              style: TextStyle(
+                fontSize: 12,
+                color: isOverGoal ? Colors.red : Colors.grey[600],
+                fontWeight: isOverGoal ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 4),
         LinearProgressIndicator(
-          value: progress,
+          value: progress > 1.0 ? 1.0 : progress,
           backgroundColor: Colors.grey[200],
-          color: Colors.blueAccent,
-          minHeight: 4,
+          color: isOverGoal ? Colors.red : Colors.green,
+          minHeight: 8,
         ),
       ],
     );

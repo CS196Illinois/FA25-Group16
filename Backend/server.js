@@ -3,9 +3,15 @@ const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
 const auth = require('./auth');
+const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Database connection
+const dbPath = path.join(__dirname, 'data', 'nutrition_data.db');
+const db = new sqlite3.Database(dbPath);
 
 // Middleware
 app.use(cors());
@@ -205,6 +211,257 @@ app.delete('/api/user/:userId/favorites/:index', (req, res) => {
         }
         res.json(result);
     });
+});
+
+// ============ NUTRITION DATA ENDPOINTS ============
+
+// Get all available dining halls
+app.get('/api/dining-halls', (req, res) => {
+    const query = `SELECT DISTINCT dining_hall FROM nutrition_data ORDER BY dining_hall`;
+
+    db.all(query, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error', details: err.message });
+        }
+        const halls = rows.map(row => row.dining_hall);
+        res.json({ dining_halls: halls });
+    });
+});
+
+// Get foods for a specific dining hall and meal type
+app.get('/api/dining-halls/:hall/foods', (req, res) => {
+    const { hall } = req.params;
+    const { meal_type, date } = req.query;
+
+    let query = `
+        SELECT DISTINCT name, category, serving_size, calories, protein,
+               total_fat, total_carbohydrate, dietary_fiber, sugars, sodium
+        FROM nutrition_data
+        WHERE dining_hall LIKE ?
+    `;
+    const params = [`%${hall}%`];
+
+    if (meal_type) {
+        query += ` AND meal_type = ?`;
+        params.push(meal_type);
+    }
+
+    if (date) {
+        query += ` AND date = ?`;
+        params.push(date);
+    }
+
+    query += ` GROUP BY name ORDER BY category, name`;
+
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error', details: err.message });
+        }
+        res.json({ foods: rows, count: rows.length });
+    });
+});
+
+// Get recommended foods for user based on goals
+app.get('/api/recommendations/:userId', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const { dining_hall, meal_type } = req.query;
+
+    if (!dining_hall) {
+        return res.status(400).json({ error: 'dining_hall is required' });
+    }
+
+    // Get user profile to understand their goals
+    auth.getUserProfile(userId, (err, user) => {
+        if (err) {
+            return res.status(404).json(err);
+        }
+
+        const targetCaloriesPerMeal = Math.floor((user.calories || 2000) / 3);
+
+        // Get foods from the dining hall
+        let query = `
+            SELECT DISTINCT name, category, serving_size, calories, protein,
+                   total_fat, total_carbohydrate, dietary_fiber, sugars, sodium,
+                   (protein * 4.0 / NULLIF(calories, 0)) as protein_ratio,
+                   (total_fat * 9.0 / NULLIF(calories, 0)) as fat_ratio
+            FROM nutrition_data
+            WHERE dining_hall LIKE ?
+            AND calories > 0
+        `;
+        const params = [`%${dining_hall}%`];
+
+        if (meal_type) {
+            query += ` AND meal_type = ?`;
+            params.push(meal_type);
+        }
+
+        // Score foods based on nutrition
+        query += `
+            GROUP BY name
+            ORDER BY
+                (protein * 4.0 / NULLIF(calories, 0)) DESC,
+                (total_fat * 9.0 / NULLIF(calories, 0)) ASC,
+                dietary_fiber DESC
+            LIMIT 20
+        `;
+
+        db.all(query, params, (err, foods) => {
+            if (err) {
+                return res.status(500).json({ error: 'Database error', details: err.message });
+            }
+
+            res.json({
+                recommendations: foods,
+                user_target_calories: targetCaloriesPerMeal,
+                goal: user.goal,
+                count: foods.length
+            });
+        });
+    });
+});
+
+// ============ MEAL TRACKING ENDPOINTS ============
+
+// Initialize meal tracking database
+const mealTrackingDbPath = path.join(__dirname, 'data', 'meal_tracking.json');
+
+// Helper function to read meal tracking data
+function readMealTracking() {
+    try {
+        if (fs.existsSync(mealTrackingDbPath)) {
+            const data = fs.readFileSync(mealTrackingDbPath, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (e) {
+        console.error('Error reading meal tracking data:', e);
+    }
+    return { meals: [] };
+}
+
+// Helper function to write meal tracking data
+function writeMealTracking(data) {
+    try {
+        fs.writeFileSync(mealTrackingDbPath, JSON.stringify(data, null, 2));
+        return true;
+    } catch (e) {
+        console.error('Error writing meal tracking data:', e);
+        return false;
+    }
+}
+
+// Log a consumed meal
+app.post('/api/user/:userId/meals', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const { foods, meal_type, dining_hall, consumed_at } = req.body;
+
+    if (!foods || !Array.isArray(foods) || foods.length === 0) {
+        return res.status(400).json({ error: 'foods array is required' });
+    }
+
+    const trackingData = readMealTracking();
+
+    const mealEntry = {
+        id: Date.now(),
+        user_id: userId,
+        meal_type: meal_type || 'Snack',
+        dining_hall: dining_hall || 'Unknown',
+        consumed_at: consumed_at || new Date().toISOString(),
+        foods: foods,
+        totals: {
+            calories: foods.reduce((sum, f) => sum + (f.calories || 0), 0),
+            protein: foods.reduce((sum, f) => sum + (f.protein || 0), 0),
+            fat: foods.reduce((sum, f) => sum + (f.total_fat || 0), 0),
+            carbs: foods.reduce((sum, f) => sum + (f.total_carbohydrate || 0), 0),
+            fiber: foods.reduce((sum, f) => sum + (f.dietary_fiber || 0), 0),
+        }
+    };
+
+    trackingData.meals.push(mealEntry);
+
+    if (writeMealTracking(trackingData)) {
+        res.status(201).json({ success: true, meal: mealEntry });
+    } else {
+        res.status(500).json({ error: 'Failed to save meal' });
+    }
+});
+
+// Get user's meal history
+app.get('/api/user/:userId/meals', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const { date, limit } = req.query;
+
+    const trackingData = readMealTracking();
+    let userMeals = trackingData.meals.filter(m => m.user_id === userId);
+
+    // Filter by date if provided (YYYY-MM-DD format)
+    if (date) {
+        userMeals = userMeals.filter(m => m.consumed_at.startsWith(date));
+    }
+
+    // Sort by most recent first
+    userMeals.sort((a, b) => new Date(b.consumed_at) - new Date(a.consumed_at));
+
+    // Apply limit if provided
+    if (limit) {
+        userMeals = userMeals.slice(0, parseInt(limit));
+    }
+
+    res.json({ meals: userMeals, count: userMeals.length });
+});
+
+// Get today's nutrition totals for user
+app.get('/api/user/:userId/today-totals', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    // Use local date instead of UTC to avoid timezone issues
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const trackingData = readMealTracking();
+    const todayMeals = trackingData.meals.filter(m =>
+        m.user_id === userId && m.consumed_at.startsWith(today)
+    );
+
+    const totals = {
+        calories: 0,
+        protein: 0,
+        fat: 0,
+        carbs: 0,
+        fiber: 0,
+        meals_count: todayMeals.length
+    };
+
+    todayMeals.forEach(meal => {
+        totals.calories += meal.totals.calories || 0;
+        totals.protein += meal.totals.protein || 0;
+        totals.fat += meal.totals.fat || 0;
+        totals.carbs += meal.totals.carbs || 0;
+        totals.fiber += meal.totals.fiber || 0;
+    });
+
+    res.json({ totals, date: today, meals: todayMeals });
+});
+
+// Delete a meal entry
+app.delete('/api/user/:userId/meals/:mealId', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const mealId = parseInt(req.params.mealId);
+
+    const trackingData = readMealTracking();
+    const mealIndex = trackingData.meals.findIndex(m =>
+        m.id === mealId && m.user_id === userId
+    );
+
+    if (mealIndex === -1) {
+        return res.status(404).json({ error: 'Meal not found' });
+    }
+
+    trackingData.meals.splice(mealIndex, 1);
+
+    if (writeMealTracking(trackingData)) {
+        res.json({ success: true, message: 'Meal deleted' });
+    } else {
+        res.status(500).json({ error: 'Failed to delete meal' });
+    }
 });
 
 // Health check

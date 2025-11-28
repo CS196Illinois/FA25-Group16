@@ -47,6 +47,31 @@ class UserService {
     return _currentUserId != null;
   }
 
+  // Get current user with ID and data combined
+  static Future<Map<String, dynamic>?> getCurrentUser() async {
+    // Try to load from memory first
+    if (_currentUserId != null && _currentUserData != null) {
+      return {
+        'id': _currentUserId,
+        ..._currentUserData!,
+      };
+    }
+
+    // Try to load from storage
+    final session = await StorageService.getSavedSession();
+    if (session != null) {
+      _currentUserId = session['userId'];
+      _currentUserData = session['userData'];
+
+      return {
+        'id': _currentUserId,
+        ..._currentUserData!,
+      };
+    }
+
+    return null;
+  }
+
   // Update stored user data when profile changes
   static Future<void> updateStoredUserData(Map<String, dynamic> userData) async {
     _currentUserData = userData;
