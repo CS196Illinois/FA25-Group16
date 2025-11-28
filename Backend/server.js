@@ -43,6 +43,10 @@ app.get('/api/meal-plan', (req, res) => {
         args.push('--meal', meal_type);
     }
 
+    if (req.query.goal) {
+        args.push('--goal', req.query.goal);
+    }
+
     // Spawn Python process
     // Note: Using 'python3' - make sure it's in the path
     const pythonProcess = spawn('python3', args);
