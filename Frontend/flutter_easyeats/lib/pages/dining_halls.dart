@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'auth_screen.dart';
+import 'home_page.dart' as home;
+import 'settings_page.dart';
+import 'dining_hall_detail_page.dart';
+
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
 
@@ -7,22 +10,36 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
+        currentIndex: 1,
         type: BottomNavigationBarType.fixed,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const AuthScreen()),
+              MaterialPageRoute(builder: (context) => const home.MainPage()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
             );
           }
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.block_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant),
+            label: 'Dining Halls',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
       body: SafeArea(
@@ -31,7 +48,6 @@ class MainPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               const SizedBox(height: 10),
               // Logo at the top
               Center(
@@ -75,33 +91,45 @@ class MainPage extends StatelessWidget {
 
               // Image banner with text overlay
               //Dining Hall
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    Image.asset(
-                      'assets/images/Grillworks.jpg',
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                    Container(
-                      height: 150,
-                      width: double.infinity,
-                      color: Colors.black.withOpacity(0.3),
-                      padding: const EdgeInsets.all(16),
-                      alignment: Alignment.centerLeft,
-                      child: const Text(
-                        "ISR",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DiningHallDetailPage(
+                        diningHallName: 'ISR',
                       ),
                     ),
-                  ],
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      Image.asset(
+                        'assets/images/ISR.jpg',
+                        height: 150,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        height: 150,
+                        width: double.infinity,
+                        color: Colors.black.withOpacity(0.3),
+                        padding: const EdgeInsets.all(16),
+                        alignment: Alignment.centerLeft,
+                        child: const Text(
+                          "ISR",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -109,33 +137,45 @@ class MainPage extends StatelessWidget {
 
               //Image banner with text overlay
               //Dining Hall
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    Image.asset(
-                      'assets/images/Grillworks.jpg',
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                    Container(
-                      height: 150,
-                      width: double.infinity,
-                      color: Colors.black.withOpacity(0.3),
-                      padding: const EdgeInsets.all(16),
-                      alignment: Alignment.centerLeft,
-                      child: const Text(
-                        "PAR",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DiningHallDetailPage(
+                        diningHallName: 'PAR',
                       ),
                     ),
-                  ],
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      Image.asset(
+                        'assets/images/PAR.webp',
+                        height: 150,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        height: 150,
+                        width: double.infinity,
+                        color: Colors.black.withOpacity(0.3),
+                        padding: const EdgeInsets.all(16),
+                        alignment: Alignment.centerLeft,
+                        child: const Text(
+                          "PAR",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -143,33 +183,45 @@ class MainPage extends StatelessWidget {
 
               //Image banner with text overlay
               //Dining Hall
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    Image.asset(
-                      'assets/images/Grillworks.jpg',
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                    Container(
-                      height: 150,
-                      width: double.infinity,
-                      color: Colors.black.withOpacity(0.3),
-                      padding: const EdgeInsets.all(16),
-                      alignment: Alignment.centerLeft,
-                      child: const Text(
-                        "LAR/Allen",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DiningHallDetailPage(
+                        diningHallName: 'LAR',
                       ),
                     ),
-                  ],
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      Image.asset(
+                        'assets/images/Allen.jpg',
+                        height: 150,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        height: 150,
+                        width: double.infinity,
+                        color: Colors.black.withOpacity(0.3),
+                        padding: const EdgeInsets.all(16),
+                        alignment: Alignment.centerLeft,
+                        child: const Text(
+                          "LAR/Allen",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -177,33 +229,45 @@ class MainPage extends StatelessWidget {
 
               //Image banner with text overlay
               //Dining Hall
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    Image.asset(
-                      'assets/images/Grillworks.jpg',
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                    Container(
-                      height: 150,
-                      width: double.infinity,
-                      color: Colors.black.withOpacity(0.3),
-                      padding: const EdgeInsets.all(16),
-                      alignment: Alignment.centerLeft,
-                      child: const Text(
-                        "Ikenberry",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DiningHallDetailPage(
+                        diningHallName: 'Ikenberry Dining Center',
                       ),
                     ),
-                  ],
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      Image.asset(
+                        'assets/images/Ikenberry.jpg',
+                        height: 150,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        height: 150,
+                        width: double.infinity,
+                        color: Colors.black.withOpacity(0.3),
+                        padding: const EdgeInsets.all(16),
+                        alignment: Alignment.centerLeft,
+                        child: const Text(
+                          "Ikenberry",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 

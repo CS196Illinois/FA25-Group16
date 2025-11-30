@@ -4,6 +4,8 @@ Generates optimized meal plans based on calorie targets and nutritional goals
 """
 import sqlite3
 import pandas as pd
+import random
+import numpy as np
 from datetime import datetime
 from collections import defaultdict
 
@@ -20,19 +22,25 @@ class MealPlanner:
         self.db_file = db_file
         self.excel_file = excel_file
         self.data = None
+        
+        # Define nutritional goals (Protein/Fat/Carb splits)
+        self.GOALS = {
+            'balanced': {'p': 0.30, 'f': 0.30, 'c': 0.40, 'desc': 'Balanced Diet (30/30/40)'},
+            'weight_loss': {'p': 0.40, 'f': 0.25, 'c': 0.35, 'desc': 'Weight Loss (High Protein)'},
+            'bulking': {'p': 0.30, 'f': 0.20, 'c': 0.50, 'desc': 'Bulking (High Carb/Calorie)'},
+            'keto': {'p': 0.25, 'f': 0.70, 'c': 0.05, 'desc': 'Keto (High Fat, Low Carb)'},
+        }
 
     def load_data(self):
         """Load nutrition data from Excel or database"""
         if self.excel_file:
-            print(f"Loading data from Excel: {self.excel_file}")
+            # print(f"Loading data from Excel: {self.excel_file}")
             self.data = pd.read_excel(self.excel_file)
-            print(f"✓ Loaded {len(self.data)} items from Excel")
         else:
-            print(f"Loading data from database: {self.db_file}")
+            # print(f"Loading data from database: {self.db_file}")
             conn = sqlite3.connect(self.db_file)
             self.data = pd.read_sql_query("SELECT * FROM nutrition_data", conn)
             conn.close()
-            print(f"✓ Loaded {len(self.data)} items from database")
 
     def get_current_meal_type(self):
         """Automatically determine meal type based on current time"""
@@ -45,23 +53,12 @@ class MealPlanner:
         elif 15 <= current_hour < 21:
             return "Dinner"
         else:
-            # Late night or early morning - default to next meal
             if current_hour >= 21 or current_hour < 6:
-                return "Breakfast"  # Next day breakfast
+                return "Breakfast"
             return "Lunch"
 
     def filter_available_items(self, dining_hall, meal_type, date=None):
-        """
-        Filter items available for specific dining hall and meal
-
-        Args:
-            dining_hall: Name of dining hall (e.g., "ISR")
-            meal_type: Type of meal (Breakfast, Lunch, Dinner)
-            date: Optional date filter
-
-        Returns:
-            DataFrame of available items
-        """
+        """Filter items available for specific dining hall and meal"""
         if self.data is None:
             self.load_data()
 
@@ -86,12 +83,7 @@ class MealPlanner:
         return filtered.copy()
 
     def categorize_items(self, items_df):
-        """
-        Categorize items into food groups
-
-        Returns:
-            Dictionary with categories as keys and DataFrames as values
-        """
+        """Categorize items into food groups"""
         categories = {
             'protein': items_df[items_df['category'].str.contains(
                 'entree|protein|chicken|beef|fish|pork|turkey|tofu|egg',
@@ -112,19 +104,16 @@ class MealPlanner:
         for idx, row in items_df.iterrows():
             name_lower = str(row['name']).lower()
 
-            # Protein indicators
             if any(word in name_lower for word in ['chicken', 'beef', 'pork', 'fish', 'salmon',
                                                      'turkey', 'egg', 'tofu', 'bean', 'lentil']):
                 if idx not in categories['protein'].index:
                     categories['protein'] = pd.concat([categories['protein'], items_df.loc[[idx]]])
 
-            # Carb indicators
             if any(word in name_lower for word in ['rice', 'pasta', 'bread', 'potato', 'noodle',
                                                      'tortilla', 'quinoa', 'oat']):
                 if idx not in categories['carbs'].index:
                     categories['carbs'] = pd.concat([categories['carbs'], items_df.loc[[idx]]])
 
-            # Vegetable indicators
             if any(word in name_lower for word in ['broccoli', 'carrot', 'spinach', 'lettuce',
                                                      'tomato', 'pepper', 'green', 'salad', 'veggie']):
                 if idx not in categories['vegetables'].index:
@@ -132,233 +121,306 @@ class MealPlanner:
 
         return categories
 
-    def score_item(self, item, target_calories, max_fat):
+    def score_item(self, item, goal_config):
         """
-        Score an item based on nutritional value for weight loss
-
-        Scoring criteria:
-        - High protein (better score)
-        - Low fat (better score)
-        - Appropriate calorie density
-        - Fiber content (if available)
-
-        Returns:
-            Float score (higher is better)
+        Score an item based on nutritional value and current goal
         """
         score = 0.0
-
         calories = float(item['calories'])
         protein = float(item['protein'])
         fat = float(item['total_fat'])
+        carbs = float(item['total_carbohydrate'])
         fiber = float(item['dietary_fiber']) if pd.notna(item['dietary_fiber']) else 0
 
-        # Protein score (high protein is good) - up to 40 points
-        # Aim for at least 10g protein per 200 calories
-        protein_ratio = protein / (calories / 200) if calories > 0 else 0
-        score += min(protein_ratio * 10, 40)
+        if calories <= 0: return 0
 
-        # Fat score (low fat is good) - up to 30 points
-        # Penalize high fat items
-        fat_ratio = fat / (calories / 100) if calories > 0 else 0
-        fat_score = max(30 - fat_ratio * 5, 0)  # Lower fat ratio = higher score
-        score += fat_score
+        # Calculate density (per 100 cal)
+        p_density = (protein * 4) / calories
+        f_density = (fat * 9) / calories
+        c_density = (carbs * 4) / calories
 
-        # Fiber score (high fiber is good) - up to 15 points
-        fiber_score = min(fiber * 2, 15)
-        score += fiber_score
+        # Score based on proximity to goal ratios
+        # We reward items that help us hit the target ratio
+        
+        # Protein Score
+        if p_density >= goal_config['p']:
+            score += 30  # Excellent protein source
+        elif p_density >= goal_config['p'] * 0.5:
+            score += 15  # Decent protein source
 
-        # Calorie density score - up to 15 points
-        # Prefer moderate calorie density (not too high, not too low)
-        # Ideal range: 100-300 calories per serving
-        if 100 <= calories <= 300:
-            score += 15
-        elif 50 <= calories < 100 or 300 < calories <= 400:
-            score += 10
-        elif calories < 50 or calories > 400:
-            score += 5
+        # Fat Score
+        # For Keto, we want high fat. For others, we usually want moderate fat.
+        if goal_config['f'] > 0.5: # Keto
+            if f_density >= 0.5: score += 20
+        else: # Normal
+            if f_density <= 0.35: score += 20 # Low saturated fat usually preferred
+            
+        # Carb Score
+        if goal_config['c'] < 0.1: # Keto/Low Carb
+            if c_density < 0.1: score += 30 # Low carb is good
+            elif c_density > 0.3: score -= 20 # High carb is bad
+        else:
+            if 0.3 <= c_density <= 0.6: score += 10 # Moderate carbs good for energy
+
+        # Fiber is always good
+        score += min(fiber * 3, 15)
 
         return score
 
-    def create_meal_plan(self, target_calories, dining_hall, meal_type=None,
-                        max_items=5, calorie_tolerance=0.1, max_fat_ratio=0.35):
+    def generate_random_meal(self, categories, target_calories, goal_config, max_items=5):
         """
-        Create an optimized meal plan
-
-        Args:
-            target_calories: Target calorie goal (e.g., 600)
-            dining_hall: Dining hall name (e.g., "ISR")
-            meal_type: Meal type (optional - auto-detected if None)
-            max_items: Maximum number of items in meal plan (default: 5)
-            calorie_tolerance: Allowed deviation from target (default: 10%)
-            max_fat_ratio: Maximum fat as % of calories (default: 35%)
-
-        Returns:
-            Dictionary with meal plan details
+        Generate a single valid random meal combination
         """
-        # Auto-detect meal type if not provided
+        selected_items = []
+        current_cals = 0
+        
+        # Ensure we get a main protein
+        if not categories['protein'].empty:
+            main = categories['protein'].sample(n=1).iloc[0]
+            selected_items.append(main)
+            current_cals += main['calories']
+            
+        # Ensure we get a vegetable
+        if not categories['vegetables'].empty:
+            veg = categories['vegetables'].sample(n=1).iloc[0]
+            # Avoid duplicates
+            if veg['name'] != selected_items[0]['name']:
+                selected_items.append(veg)
+                current_cals += veg['calories']
+                
+        # Fill rest with random items from any category until close to target
+        attempts = 0
+        while len(selected_items) < max_items and attempts < 10:
+            attempts += 1
+            
+            # Pick a random category based on what we might need
+            # Simple logic: just pick random for now
+            cat_name = random.choice(['protein', 'carbs', 'vegetables', 'other'])
+            if categories[cat_name].empty: continue
+            
+            item = categories[cat_name].sample(n=1).iloc[0]
+            
+            # Skip duplicates
+            if any(s['name'] == item['name'] for s in selected_items):
+                continue
+                
+            # Check if it fits
+            if current_cals + item['calories'] > target_calories * 1.2:
+                continue
+                
+            selected_items.append(item)
+            current_cals += item['calories']
+            
+            if current_cals >= target_calories * 0.9:
+                break
+                
+        return selected_items
+
+    def is_discrete_item(self, name):
+        """Check if item should be counted in discrete units (0.5, 1.0, etc.)"""
+        name_lower = str(name).lower()
+        discrete_keywords = [
+            'bun', 'bread', 'roll', 'slice', 'cookie', 'egg', 'patty', 
+            'burger', 'sandwich', 'apple', 'banana', 'orange', 'pear',
+            'muffin', 'bagel', 'toast', 'wrap', 'taco', 'burrito', 'pizza',
+            'donut', 'pancake', 'waffle', 'sausage'
+        ]
+        return any(keyword in name_lower for keyword in discrete_keywords)
+
+    def optimize_servings(self, items, target_calories):
+        """
+        Adjust servings to hit calorie target exactly, respecting discrete items
+        """
+        if not items: return items
+        
+        total_cals_initial = sum(item['calories'] for item in items)
+        if total_cals_initial == 0: return items
+        
+        # Initial global scale
+        global_scale = target_calories / total_cals_initial
+        global_scale = max(0.5, min(global_scale, 2.0))
+        
+        discrete_items = []
+        continuous_items = []
+        
+        current_cals = 0
+        
+        # Step 1: Process discrete items first
+        for item in items:
+            if self.is_discrete_item(item['name']):
+                # Scale and round to nearest 0.5
+                ideal_servings = item['servings'] * global_scale
+                rounded_servings = round(ideal_servings * 2) / 2
+                rounded_servings = max(0.5, rounded_servings) # Min 0.5
+                
+                new_item = item.copy()
+                new_item['servings'] = rounded_servings
+                new_item['calories'] = round(item['calories'] / item['servings'] * rounded_servings, 1)
+                new_item['protein'] = round(item['protein'] / item['servings'] * rounded_servings, 1)
+                new_item['total_fat'] = round(item['total_fat'] / item['servings'] * rounded_servings, 1)
+                new_item['total_carbohydrate'] = round(item['total_carbohydrate'] / item['servings'] * rounded_servings, 1)
+                
+                # Handle fiber safely
+                fiber_val = item.get('dietary_fiber', 0)
+                if pd.isna(fiber_val): fiber_val = 0
+                new_item['dietary_fiber'] = round(float(fiber_val) / item['servings'] * rounded_servings, 1)
+                
+                discrete_items.append(new_item)
+                current_cals += new_item['calories']
+            else:
+                continuous_items.append(item)
+
+        # Step 2: Adjust continuous items to fill the gap
+        remaining_cals = target_calories - current_cals
+        continuous_initial_cals = sum(i['calories'] for i in continuous_items)
+        
+        final_items = discrete_items.copy()
+        
+        if continuous_items:
+            # If we have continuous items, scale them to fit remaining calories
+            # But don't let them go negative or too crazy
+            if continuous_initial_cals > 0 and remaining_cals > 0:
+                cont_scale = remaining_cals / continuous_initial_cals
+                # Clamp scale to avoid huge portions just to fill calories
+                cont_scale = max(0.2, min(cont_scale, 3.0))
+            else:
+                cont_scale = global_scale # Fallback if math gets weird
+                
+            for item in continuous_items:
+                new_item = item.copy()
+                new_item['servings'] = round(item['servings'] * cont_scale, 2)
+                new_item['calories'] = round(item['calories'] * cont_scale, 1)
+                new_item['protein'] = round(item['protein'] * cont_scale, 1)
+                new_item['total_fat'] = round(item['total_fat'] * cont_scale, 1)
+                new_item['total_carbohydrate'] = round(item['total_carbohydrate'] * cont_scale, 1)
+                
+                fiber_val = item.get('dietary_fiber', 0)
+                if pd.isna(fiber_val): fiber_val = 0
+                new_item['dietary_fiber'] = round(float(fiber_val) * cont_scale, 1)
+                
+                final_items.append(new_item)
+        else:
+            # If no continuous items, we just have to live with the discrete rounding
+            # Maybe add the original continuous items back scaled globally if logic failed?
+            # But here continuous_items is empty, so we are done.
+            pass
+            
+        return final_items
+
+    def evaluate_meal(self, items, target_calories, goal_config):
+        """
+        Calculate a total score for a complete meal
+        """
+        total_cals = sum(item['calories'] for item in items)
+        total_p = sum(item['protein'] for item in items)
+        total_f = sum(item['total_fat'] for item in items)
+        total_c = sum(item['total_carbohydrate'] for item in items)
+        
+        if total_cals == 0: return -1000
+        
+        # 1. Calorie Score (how close to target)
+        cal_diff_percent = abs(total_cals - target_calories) / target_calories
+        cal_score = max(0, 100 - (cal_diff_percent * 200)) # 100 pts if exact, 0 if >50% off
+        
+        # 2. Macro Balance Score
+        p_ratio = (total_p * 4) / total_cals
+        f_ratio = (total_f * 9) / total_cals
+        c_ratio = (total_c * 4) / total_cals
+        
+        # Euclidean distance from goal vector
+        dist = np.sqrt(
+            (p_ratio - goal_config['p'])**2 +
+            (f_ratio - goal_config['f'])**2 +
+            (c_ratio - goal_config['c'])**2
+        )
+        macro_score = max(0, 100 - (dist * 200))
+        
+        # 3. Diversity Score (bonus for using multiple categories)
+        cats = set()
+        for item in items:
+            # We need to re-infer category or pass it through. 
+            # For simplicity, we assume the item dict has 'category'
+            cats.add(str(item['category']))
+        div_score = len(cats) * 10
+        
+        return (cal_score * 0.4) + (macro_score * 0.5) + (div_score * 0.1)
+
+    def create_meal_plan(self, target_calories, dining_hall, meal_type=None, goal='balanced'):
+        """
+        Create an optimized meal plan using Randomized Search
+        """
         if meal_type is None:
             meal_type = self.get_current_meal_type()
-            print(f"Auto-detected meal type: {meal_type}")
-
-        # Calculate calorie range
-        min_calories = target_calories * (1 - calorie_tolerance)
-        max_calories = target_calories * (1 + calorie_tolerance)
-
-        # Calculate max fat in grams (fat has 9 cal/g)
-        max_fat_grams = (target_calories * max_fat_ratio) / 9
-
-        print(f"\n{'='*60}")
-        print(f"MEAL PLANNER - Weight Loss Mode")
-        print(f"{'='*60}")
-        print(f"Dining Hall: {dining_hall}")
-        print(f"Meal Type: {meal_type}")
-        print(f"Target Calories: {target_calories} (range: {min_calories:.0f}-{max_calories:.0f})")
-        print(f"Max Fat: {max_fat_grams:.1f}g")
-        print(f"{'='*60}\n")
-
+            
+        goal_config = self.GOALS.get(goal, self.GOALS['balanced'])
+        
         # Get available items
         available_items = self.filter_available_items(dining_hall, meal_type)
-
+        
         if len(available_items) == 0:
-            return {
-                'error': f'No items found for {dining_hall} - {meal_type}',
-                'dining_hall': dining_hall,
-                'meal_type': meal_type
-            }
+            return {'error': f'No items found for {dining_hall} - {meal_type}'}
 
-        print(f"Found {len(available_items)} available items")
-
-        # Score all items FIRST (before categorizing)
-        available_items['score'] = available_items.apply(
-            lambda x: self.score_item(x, target_calories, max_fat_grams),
-            axis=1
-        )
-
-        # Categorize items
+        # Categorize
         categories = self.categorize_items(available_items)
+        
+        best_meal = None
+        best_score = -float('inf')
+        
+        # Randomized Search (Monte Carlo)
+        # Generate 50 random valid meals, score them, pick best
+        for _ in range(50):
+            # 1. Generate random items
+            items_df = self.generate_random_meal(categories, target_calories, goal_config)
+            
+            # 2. Convert to list of dicts for processing
+            items_list = []
+            for row in items_df:
+                item_dict = row.to_dict()
+                item_dict['servings'] = 1.0 # Initialize servings
+                items_list.append(item_dict)
+            
+            # 3. Optimize servings to hit calorie target
+            optimized_items = self.optimize_servings(items_list, target_calories)
+            
+            # 4. Score
+            score = self.evaluate_meal(optimized_items, target_calories, goal_config)
+            
+            if score > best_score:
+                best_score = score
+                best_meal = optimized_items
 
-        # Greedy selection with diversity
-        selected_items = []
-        total_calories = 0
-        total_protein = 0
-        total_fat = 0
-        total_carbs = 0
-        categories_used = set()
-
-        # Priority: protein -> vegetables -> carbs -> other
-        category_priority = ['protein', 'vegetables', 'carbs', 'other']
-
-        for category in category_priority:
-            cat_items = categories[category]
-
-            if len(cat_items) == 0:
-                continue
-
-            # Sort by score
-            cat_items = cat_items.sort_values('score', ascending=False)
-
-            # Try to add items from this category
-            for idx, item in cat_items.iterrows():
-                if len(selected_items) >= max_items:
-                    break
-
-                # Skip if already selected
-                if any(s['name'] == item['name'] for s in selected_items):
-                    continue
-
-                # Calculate optimal serving size
-                remaining_calories = max_calories - total_calories
-                item_calories = float(item['calories'])
-
-                if item_calories <= 0:
-                    continue
-
-                # Start with 1 serving
-                servings = 1.0
-
-                # Adjust serving size based on remaining calories
-                if total_calories + item_calories > max_calories:
-                    # Reduce serving size
-                    servings = remaining_calories / item_calories
-                    servings = max(0.25, min(servings, 1.0))  # Keep between 0.25 and 1.0
-
-                # Calculate nutrition for this serving
-                item_total_cal = item_calories * servings
-                item_total_fat = float(item['total_fat']) * servings
-                item_total_protein = float(item['protein']) * servings
-                item_total_carbs = float(item['total_carbohydrate']) * servings
-
-                # Check if adding this item would exceed fat limit
-                if total_fat + item_total_fat > max_fat_grams:
-                    continue  # Skip high-fat items
-
-                # Check if this would put us way over calorie limit
-                if total_calories + item_total_cal > max_calories * 1.2:
-                    continue
-
-                # Add item
-                selected_items.append({
-                    'name': item['name'],
-                    'category': item['category'] if pd.notna(item['category']) else 'Other',
-                    'servings': round(servings, 2),
-                    'calories_per_serving': round(item_calories, 1),
-                    'calories': round(item_total_cal, 1),
-                    'protein': round(item_total_protein, 1),
-                    'fat': round(item_total_fat, 1),
-                    'carbs': round(item_total_carbs, 1),
-                    'fiber': round(float(item['dietary_fiber']) * servings, 1) if pd.notna(item['dietary_fiber']) else 0,
-                    'score': round(float(item['score']), 1)
-                })
-
-                total_calories += item_total_cal
-                total_fat += item_total_fat
-                total_protein += item_total_protein
-                total_carbs += item_total_carbs
-                categories_used.add(category)
-
-                # Stop if we're close to target
-                if total_calories >= min_calories:
-                    break
-
-            # Stop if we have enough calories and items
-            if total_calories >= min_calories and len(selected_items) >= 2:
-                break
-
-        # Optimize servings to get closer to target
-        if len(selected_items) > 0 and total_calories < min_calories:
-            # Scale up proportionally
-            scale_factor = min(target_calories / total_calories, 1.5)  # Max 1.5x scaling
-
-            for item in selected_items:
-                item['servings'] = round(item['servings'] * scale_factor, 2)
-                item['calories'] = round(item['calories'] * scale_factor, 1)
-                item['protein'] = round(item['protein'] * scale_factor, 1)
-                item['fat'] = round(item['fat'] * scale_factor, 1)
-                item['carbs'] = round(item['carbs'] * scale_factor, 1)
-                item['fiber'] = round(item['fiber'] * scale_factor, 1)
-
-            total_calories *= scale_factor
-            total_protein *= scale_factor
-            total_fat *= scale_factor
-            total_carbs *= scale_factor
-
+        # Final formatting
+        total_calories = sum(i['calories'] for i in best_meal)
+        total_protein = sum(i['protein'] for i in best_meal)
+        total_fat = sum(i['total_fat'] for i in best_meal)
+        total_carbs = sum(i['total_carbohydrate'] for i in best_meal)
+        
         # Calculate percentages
-        fat_calories = total_fat * 9
-        protein_calories = total_protein * 4
-        carb_calories = total_carbs * 4
+        fat_percent = (total_fat * 9 / total_calories * 100) if total_calories > 0 else 0
+        protein_percent = (total_protein * 4 / total_calories * 100) if total_calories > 0 else 0
+        carb_percent = (total_carbs * 4 / total_calories * 100) if total_calories > 0 else 0
 
-        fat_percent = (fat_calories / total_calories * 100) if total_calories > 0 else 0
-        protein_percent = (protein_calories / total_calories * 100) if total_calories > 0 else 0
-        carb_percent = (carb_calories / total_calories * 100) if total_calories > 0 else 0
+        # Clean up items for JSON output
+        final_items_clean = []
+        for item in best_meal:
+            final_items_clean.append({
+                'name': item['name'],
+                'category': item['category'],
+                'servings': item['servings'],
+                'calories': item['calories'],
+                'protein': item['protein'],
+                'fat': item['total_fat'],
+                'carbs': item['total_carbohydrate'],
+                'score': 0 # Legacy field
+            })
 
-        # Build result
-        result = {
+        return {
             'dining_hall': dining_hall,
             'meal_type': meal_type,
             'target_calories': target_calories,
-            'calorie_range': f"{min_calories:.0f}-{max_calories:.0f}",
+            'goal': goal_config['desc'],
             'actual_calories': round(total_calories, 1),
-            'items': selected_items,
+            'items': final_items_clean,
             'totals': {
                 'calories': round(total_calories, 1),
                 'protein': round(total_protein, 1),
@@ -368,92 +430,42 @@ class MealPlanner:
                 'protein_percent': round(protein_percent, 1),
                 'carb_percent': round(carb_percent, 1)
             },
-            'meets_target': min_calories <= total_calories <= max_calories,
-            'within_fat_limit': total_fat <= max_fat_grams,
-            'diversity_score': len(categories_used)
+            'meets_target': abs(total_calories - target_calories) < (target_calories * 0.1)
         }
 
-        return result
-
-    def print_meal_plan(self, meal_plan):
-        """Pretty print meal plan"""
-        if 'error' in meal_plan:
-            print(f"\n❌ {meal_plan['error']}")
-            return
-
-        print(f"\n{'='*60}")
-        print(f"MEAL PLAN")
-        print(f"{'='*60}")
-        print(f"Location: {meal_plan['dining_hall']}")
-        print(f"Meal: {meal_plan['meal_type']}")
-        print(f"Target: {meal_plan['target_calories']} cal (range: {meal_plan['calorie_range']})")
-        print(f"\n{'='*60}")
-        print(f"ITEMS TO GET")
-        print(f"{'='*60}\n")
-
-        for i, item in enumerate(meal_plan['items'], 1):
-            print(f"{i}. {item['name']}")
-            print(f"   Servings: {item['servings']}x")
-            print(f"   Nutrition: {item['calories']} cal | P:{item['protein']}g F:{item['fat']}g C:{item['carbs']}g")
-            print(f"   Category: {item['category']}")
-            print()
-
-        totals = meal_plan['totals']
-        print(f"{'='*60}")
-        print(f"TOTALS")
-        print(f"{'='*60}")
-        print(f"Calories: {totals['calories']} {'✓' if meal_plan['meets_target'] else '⚠'}")
-        print(f"Protein:  {totals['protein']}g ({totals['protein_percent']:.1f}%)")
-        print(f"Fat:      {totals['fat']}g ({totals['fat_percent']:.1f}%) {'✓' if meal_plan['within_fat_limit'] else '⚠'}")
-        print(f"Carbs:    {totals['carbs']}g ({totals['carb_percent']:.1f}%)")
-        print(f"\nDiversity: {meal_plan['diversity_score']}/4 food groups")
-        print(f"{'='*60}\n")
-
-
-# Example usage
 if __name__ == "__main__":
     import argparse
     import json
-    import sys
     import os
+    import sys
 
     # Default paths
-    # Script is in Backend/services/
-    # DB is in Backend/data/nutrition_data.db
     current_dir = os.path.dirname(os.path.abspath(__file__))
     backend_dir = os.path.dirname(current_dir)
     default_db = os.path.join(backend_dir, 'data', 'nutrition_data.db')
     
-    # Fallback to relative path if absolute doesn't work as expected
     if not os.path.exists(default_db):
         default_db = 'nutrition_data.db'
 
-    parser = argparse.ArgumentParser(description='Generate a meal plan')
-    parser.add_argument('--calories', type=int, default=600, help='Target calories')
-    parser.add_argument('--hall', type=str, default='ISR', help='Dining hall name')
-    parser.add_argument('--meal', type=str, help='Meal type (Breakfast, Lunch, Dinner)')
-    parser.add_argument('--db', type=str, default=default_db, help='Path to database')
-    parser.add_argument('--json', action='store_true', help='Output as JSON')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--calories', type=int, default=600)
+    parser.add_argument('--hall', type=str, default='ISR')
+    parser.add_argument('--meal', type=str)
+    parser.add_argument('--goal', type=str, default='balanced', choices=['balanced', 'weight_loss', 'bulking', 'keto'])
+    parser.add_argument('--db', type=str, default=default_db)
+    parser.add_argument('--json', action='store_true')
     
     args = parser.parse_args()
 
-    # Initialize planner
-    # Check if db exists, otherwise warn
-    if not os.path.exists(args.db) and not args.json:
-        print(f"Warning: Database not found at {args.db}")
-        
     planner = MealPlanner(db_file=args.db)
-
-    # Generate plan
     meal_plan = planner.create_meal_plan(
         target_calories=args.calories,
         dining_hall=args.hall,
-        meal_type=args.meal
+        meal_type=args.meal,
+        goal=args.goal
     )
 
     if args.json:
-        # Output only JSON to stdout
         print(json.dumps(meal_plan))
     else:
-        # Pretty print
-        planner.print_meal_plan(meal_plan)
+        print(json.dumps(meal_plan, indent=2))
