@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Illinois Street Residence Hall',
+      title: 'Ikenberry Dining Center',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // This is the theme of your application.
@@ -138,10 +138,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       padding: const EdgeInsets.all(16),
                       alignment: Alignment.centerLeft,
                       child: const Text(
-                        "ISR",
+                        "Ikenberry Dining Center",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 25,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
