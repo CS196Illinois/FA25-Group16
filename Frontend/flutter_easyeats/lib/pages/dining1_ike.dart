@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 
 void main() {
   runApp(const MyApp());
@@ -41,18 +44,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +169,38 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 10),
 
-              
+              //api 
+              FutureBuilder<Map<String, dynamic>>(
+                future: fetchRecommendedMenu(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Text(
+                      "Error: ${snapshot.error}",
+                      style: const TextStyle(color: Colors.red),
+                    );
+                  }
+
+                  final data = snapshot.data!;
+                  final items = data["items"] as List<dynamic>;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: items.map((item) {
+                      return Card(
+                        child: ListTile(
+                          title: Text(item["name"]),
+                          subtitle: Text("${item["calories"]} calories"),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              )
+
 
               
             ],
@@ -187,4 +209,25 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
+Future<Map<String, dynamic>> fetchRecommendedMenu() async {
+  final uri = Uri.parse(
+      "http://localhost:3000/api/meal-plan?calories=600&dining_hall=Ike");
+
+  final response = await http.get(uri);
+
+  if (response.statusCode != 200) {
+    throw Exception("Failed to load menu");
+  }
+
+  final data = jsonDecode(response.body);
+
+  if (data.containsKey("error")) {
+    throw Exception(data["error"]);
+  }
+
+  return data; // Example: { "items": [...], "total_calories": 573 }
+}
+
+
 }
