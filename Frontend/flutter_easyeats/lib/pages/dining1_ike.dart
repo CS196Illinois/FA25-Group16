@@ -169,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 10),
 
-              //api 
+              //api
               FutureBuilder<Map<String, dynamic>>(
                 future: fetchRecommendedMenu(),
                 builder: (context, snapshot) {
@@ -178,14 +178,70 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
 
                   if (snapshot.hasError) {
-                    return Text(
-                      "Error: ${snapshot.error}",
-                      style: const TextStyle(color: Colors.red),
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.restaurant_menu, size: 48, color: Colors.orange[700]),
+                          const SizedBox(height: 12),
+                          Text(
+                            "No menu items available",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange[900],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "This dining hall doesn't have items for the current meal time.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Try selecting a different dining hall or meal time.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
                     );
                   }
 
                   final data = snapshot.data!;
                   final items = data["items"] as List<dynamic>;
+
+                  if (items.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          Text(
+                            "No items found",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
