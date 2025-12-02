@@ -1,9 +1,6 @@
 {
-<<<<<<< HEAD
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
-    "python-envs.pythonProjects": []
-=======
+    "python-envs.pythonProjects": [],
     "python.REPL.enableREPLSmartSend": false
->>>>>>> 5bbba8f (Created SQL database)
 }
