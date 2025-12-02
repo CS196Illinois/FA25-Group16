@@ -125,7 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     Container(
                       height: 100,
                       width: double.infinity,
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       padding: const EdgeInsets.all(16),
                       alignment: Alignment.centerLeft,
                       child: const Text(

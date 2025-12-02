@@ -116,7 +116,7 @@ class MainPage extends StatelessWidget {
                       Container(
                         height: 150,
                         width: double.infinity,
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         padding: const EdgeInsets.all(16),
                         alignment: Alignment.centerLeft,
                         child: const Text(
@@ -162,7 +162,7 @@ class MainPage extends StatelessWidget {
                       Container(
                         height: 150,
                         width: double.infinity,
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         padding: const EdgeInsets.all(16),
                         alignment: Alignment.centerLeft,
                         child: const Text(
@@ -208,7 +208,7 @@ class MainPage extends StatelessWidget {
                       Container(
                         height: 150,
                         width: double.infinity,
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         padding: const EdgeInsets.all(16),
                         alignment: Alignment.centerLeft,
                         child: const Text(
@@ -254,7 +254,7 @@ class MainPage extends StatelessWidget {
                       Container(
                         height: 150,
                         width: double.infinity,
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         padding: const EdgeInsets.all(16),
                         alignment: Alignment.centerLeft,
                         child: const Text(
@@ -314,7 +314,7 @@ class MainPage extends StatelessWidget {
             height: 70,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
             ),
           ),
           SizedBox(

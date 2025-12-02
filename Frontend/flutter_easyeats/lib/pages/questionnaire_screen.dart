@@ -77,6 +77,9 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _isLoading ? null : () async {
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+
                 setState(() {
                   _isLoading = true;
                 });
@@ -94,22 +97,21 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                   _isLoading = false;
                 });
 
+                if (!mounted) return;
+
                 if (result['success']) {
                   // Store user data (with persistent storage)
                   await UserService.setCurrentUser(widget.userId, result['data']['user']);
 
-                  if (mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MainPage()),
-                    );
-                  }
+                  if (!mounted) return;
+                  navigator.pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MainPage()),
+                  );
                 } else{
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(result['error'])),
-                    );
-                  }
+                  if (!mounted) return;
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text(result['error'])),
+                  );
                 }
               },
               child: _isLoading

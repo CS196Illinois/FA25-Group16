@@ -20,7 +20,7 @@ class _DiningHallDetailPageState extends State<DiningHallDetailPage> {
   bool _showRecommendations = true;
   List<FoodItem> _recommendations = [];
   List<FoodItem> _allFoods = [];
-  List<FoodItem> _selectedFoods = [];
+  final List<FoodItem> _selectedFoods = [];
   String _selectedMealType = 'Lunch';
   int? _userId;
   int _targetCalories = 2000;
@@ -526,9 +526,9 @@ class _DiningHallDetailPageState extends State<DiningHallDetailPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,

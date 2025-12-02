@@ -169,7 +169,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 16),
 
                   DropdownButtonFormField<String>(
-                    value: _selectedSex,
+                    initialValue: _selectedSex,
                     decoration: const InputDecoration(
                       labelText: 'Sex',
                       border: OutlineInputBorder(),
