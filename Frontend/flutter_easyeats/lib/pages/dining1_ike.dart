@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-
 void main() {
   runApp(const MyApp());
 }
@@ -18,7 +17,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // This is the theme of your application.
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 7, 15, 124)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 7, 15, 124),
+        ),
       ),
       home: const MyHomePage(title: ''),
     );
@@ -44,7 +45,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -55,7 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: null,
-      
+
       //bottom nav bar
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
@@ -72,20 +72,24 @@ class _MyHomePageState extends State<MyHomePage> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
           BottomNavigationBarItem(icon: Icon(Icons.block_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications_none_outlined), label: ''),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart_outlined),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_none_outlined),
+            label: '',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
         ],
       ),
 
-      
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
               const SizedBox(height: 10),
               // Logo at the top
               Center(
@@ -96,13 +100,10 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 6),
 
-              
-
               // Top Buttons Row
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
+                child: Row(children: [
                     
                   ],
                 ),
@@ -154,7 +155,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 0,
+                    horizontal: 12,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -163,7 +167,10 @@ class _MyHomePageState extends State<MyHomePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
-                  Text("Serving:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    "Serving:",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   Icon(Icons.chevron_right),
                 ],
               ),
@@ -184,11 +191,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       decoration: BoxDecoration(
                         color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.restaurant_menu, size: 48, color: Colors.orange[700]),
+                          Icon(
+                            Icons.restaurant_menu,
+                            size: 48,
+                            color: Colors.orange[700],
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             "No menu items available",
@@ -202,13 +215,19 @@ class _MyHomePageState extends State<MyHomePage> {
                           Text(
                             "This dining hall doesn't have items for the current meal time.",
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             "Try selecting a different dining hall or meal time.",
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
@@ -228,7 +247,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+                          Icon(
+                            Icons.search_off,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             "No items found",
@@ -255,10 +278,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     }).toList(),
                   );
                 },
-              )
-
-
-              
+              ),
             ],
           ),
         ),
@@ -266,24 +286,25 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-Future<Map<String, dynamic>> fetchRecommendedMenu() async {
-  final uri = Uri.parse(
-      "http://localhost:3000/api/meal-plan?calories=600&dining_hall=Ike");
+  //fuction that calls api
 
-  final response = await http.get(uri);
+  Future<Map<String, dynamic>> fetchRecommendedMenu() async {
+    final uri = Uri.parse(
+      "http://localhost:3000/api/meal-plan?calories=600&dining_hall=Ike",
+    );
 
-  if (response.statusCode != 200) {
-    throw Exception("Failed to load menu");
+    final response = await http.get(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to load menu");
+    }
+
+    final data = jsonDecode(response.body);
+
+    if (data.containsKey("error")) {
+      throw Exception(data["error"]);
+    }
+
+    return data; // Example: { "items": [...], "total_calories": 573 }
   }
-
-  final data = jsonDecode(response.body);
-
-  if (data.containsKey("error")) {
-    throw Exception(data["error"]);
-  }
-
-  return data; // Example: { "items": [...], "total_calories": 573 }
-}
-
-
 }
