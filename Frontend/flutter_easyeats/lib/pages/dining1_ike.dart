@@ -169,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 10),
 
-              //api 
+              //api to recc - displays it 
               FutureBuilder<Map<String, dynamic>>(
                 future: fetchRecommendedMenu(),
                 builder: (context, snapshot) {
@@ -209,6 +209,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
+
+//fuction that calls api 
 
 Future<Map<String, dynamic>> fetchRecommendedMenu() async {
   final uri = Uri.parse(
