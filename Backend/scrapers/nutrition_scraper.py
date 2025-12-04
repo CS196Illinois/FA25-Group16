@@ -97,7 +97,10 @@ class NutritionScraperComplete:
             service_link = dropdown.find_element(By.CSS_SELECTOR, f"a[data-unitoid='{unit_id}']")
             
             self.driver.execute_script("arguments[0].click();", service_link)
-            time.sleep(5)
+            
+            # Wait for date selector to appear instead of fixed sleep
+            self.wait.until(EC.presence_of_element_located((By.ID, "nav-date-selector")))
+            time.sleep(1) # Small buffer
             
             print("Service loaded")
             return True
@@ -177,8 +180,12 @@ class NutritionScraperComplete:
         """Select a specific date from the dropdown"""
         try:
             # Click on the date element using JavaScript (more reliable)
+            # Click on the date element using JavaScript (more reliable)
             self.driver.execute_script("arguments[0].click();", date_element)
-            time.sleep(5)
+            
+            # Wait for results panel to update
+            self.wait.until(EC.presence_of_element_located((By.ID, "navBarResults")))
+            time.sleep(1)
             return True
         except Exception as e:
             print(f"Error selecting date: {str(e)}")
@@ -271,7 +278,16 @@ class NutritionScraperComplete:
                 # Fallback to clicking the element
                 self.driver.execute_script("arguments[0].click();", meal_element)
             
-            time.sleep(8)
+            # Wait for items to load instead of fixed sleep
+            # Look for either items or the "no items" message
+            try:
+                self.wait.until(lambda d: 
+                    len(d.find_elements(By.CSS_SELECTOR, "a.cbo_nn_itemHover")) > 0 or 
+                    len(d.find_elements(By.CSS_SELECTOR, "tr.cbo_nn_itemGroupRow")) > 0
+                )
+            except:
+                time.sleep(2) # Fallback if wait times out
+                
             print("Meal loaded")
             return True
         except Exception as e:
@@ -387,12 +403,17 @@ class NutritionScraperComplete:
                     print(f"     → Clicking...")
                     try:
                         self.driver.execute_script("arguments[0].scrollIntoView(true);", item)
-                        time.sleep(0.5)
+                        # time.sleep(0.5) # Removed small sleep
                         self.driver.execute_script("arguments[0].click();", item)
                     except:
                         item.click()
 
-                    time.sleep(4)
+                    # Wait for modal to appear
+                    try:
+                        self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[class*='modal'][class*='show'], div[role='dialog']")))
+                        time.sleep(0.5) # Buffer to ensure text renders
+                    except:
+                        time.sleep(1) # Fallback
 
                     # Extract nutrition info
                     nutrition_info = self.extract_nutrition_from_modal(food_name)
@@ -406,7 +427,7 @@ class NutritionScraperComplete:
 
                     # Close modal
                     self.close_modal()
-                    time.sleep(1)
+                    # No sleep needed after close, we just move to next item
 
                 except Exception as e:
                     print(f"    ERROR: {str(e)}")
